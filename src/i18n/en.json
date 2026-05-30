@@ -22,6 +22,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "jobs": "Open Roles",
+    "applications": "My Applications",
     "assessments": "Assessments",
     "practice": "Practice",
     "aiInterview": "AI Interview",
@@ -115,6 +116,8 @@
     "cameraReadyHint": "The camera tile will appear in the top-left while you test. No video is recorded — this is a presence signal.",
     "cameraDenied": "Camera access was denied. Allow the camera and try again — the test cannot start without it.",
     "cameraNoDevice": "No camera was detected on this device. The test requires a working camera.",
+    "cameraOptional": "No camera detected",
+    "cameraOptionalHint": "This device has no camera. Visual proctoring will be skipped, but the test will still record activity and anti-cheat events. You can continue.",
     "cameraUnavailable": "This browser does not expose the camera API. Try Chrome, Edge or Firefox.",
     "cameraRetry": "Retry camera check",
     "rightClickWarn": "Right-click is logged.",

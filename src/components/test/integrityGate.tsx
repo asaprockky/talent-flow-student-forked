@@ -94,8 +94,17 @@ const IntegrityGate: React.FC<IntegrityGateProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // When the device has no camera (or the browser doesn't expose the
+  // camera API at all), the test still proceeds — we just can't run
+  // visual proctoring. Permission `denied` (user actively refused)
+  // remains a hard block because the user can fix it by clicking
+  // "Allow" and we want them to.
+  const cameraOk = cameraStatus === 'ok';
+  const cameraSkippable = cameraStatus === 'unavailable';
+  const cameraResolved = cameraOk || cameraSkippable;
+
   const handleAccept = async () => {
-    if (!accepted || cameraStatus !== 'ok') return;
+    if (!accepted || !cameraResolved) return;
     setSubmitting(true);
     try {
       await onAccept({ requestFullscreen: true });
@@ -104,7 +113,7 @@ const IntegrityGate: React.FC<IntegrityGateProps> = ({
     }
   };
 
-  const canStart = accepted && cameraStatus === 'ok' && !submitting;
+  const canStart = accepted && cameraResolved && !submitting;
 
   return (
     <Modal
@@ -143,13 +152,21 @@ const IntegrityGate: React.FC<IntegrityGateProps> = ({
           <span>{t('test.proctoredBody')}</span>
         </div>
 
-        {/* Camera preflight */}
+        {/* Camera preflight. Three states are non-blocking:
+            - ok (green)        : camera is live, proctoring will run.
+            - checking (gray)   : preflight in flight.
+            - unavailable (amber): no camera on this device — proctoring
+              is skipped but the test can still start.
+           Permission denied stays red because the user can recover
+           from it by allowing the camera. */}
         <div
           className={`rounded-2xl p-4 border text-sm flex items-start gap-3 ${
             cameraStatus === 'ok'
               ? 'bg-emerald-50 border-emerald-100 text-emerald-900'
               : cameraStatus === 'checking'
               ? 'bg-gray-50 border-gray-200 text-gray-700'
+              : cameraStatus === 'unavailable'
+              ? 'bg-amber-50 border-amber-100 text-amber-900'
               : 'bg-rose-50 border-rose-200 text-rose-900'
           }`}
         >
@@ -168,6 +185,8 @@ const IntegrityGate: React.FC<IntegrityGateProps> = ({
                 ? t('test.cameraReady')
                 : cameraStatus === 'checking'
                 ? t('test.cameraChecking')
+                : cameraStatus === 'unavailable'
+                ? t('test.cameraOptional')
                 : t('test.cameraRequired')}
             </p>
             <p className="text-xs leading-relaxed opacity-90">
@@ -175,6 +194,8 @@ const IntegrityGate: React.FC<IntegrityGateProps> = ({
                 ? t('test.cameraReadyHint')
                 : cameraStatus === 'checking'
                 ? t('test.cameraCheckingHint')
+                : cameraStatus === 'unavailable'
+                ? cameraError || t('test.cameraOptionalHint')
                 : cameraError || t('test.cameraDenied')}
             </p>
             {(cameraStatus === 'denied' || cameraStatus === 'unavailable') && (

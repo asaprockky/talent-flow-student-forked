@@ -243,6 +243,53 @@ export interface ApplyResponse {
   applied_at: string;
 }
 
+export interface VacancyPracticeSummary {
+  practice_id: string;
+  title: string;
+  description: string;
+  duration_minutes: number;
+  deadline: string | null;
+  question_count: number;
+  tags: string[];
+  difficulty: string;
+}
+
+export interface ApplicationStatus {
+  candidate_id: string;
+  status: string;
+  applied_at: string;
+  stage_index: number;
+  stage_total: number;
+  is_terminal: boolean;
+}
+
+export interface VacancyDetail {
+  id: string;
+  job_name: string;
+  job_description: string | null;
+  tag: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_open: boolean;
+  candidate_count: number;
+  company_id: string | null;
+  company_name: string | null;
+  practice: VacancyPracticeSummary | null;
+  application: ApplicationStatus | null;
+  session_id: string | null;
+}
+
+export interface ApplicationsResponse {
+  items: VacancyDetail[];
+  counts: {
+    total: number;
+    in_progress: number;
+    completed: number;
+    rejected: number;
+  };
+  pipeline: string[];
+}
+
 export interface ReportResponse {
   session_id: string;
   practice_id: string;

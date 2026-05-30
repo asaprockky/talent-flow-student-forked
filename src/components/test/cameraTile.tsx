@@ -212,7 +212,12 @@ const CameraTile: React.FC<CameraTileProps> = ({
     };
   }, [status]);
 
-  if (!enabled || status === 'idle') return null;
+  // `unavailable` here means the device has no camera at all (or the
+  // browser doesn't expose the camera API). The integrity gate lets
+  // the student through that branch with a warning — we don't pin a
+  // big red tile in their face while they take the test. Suppress the
+  // tile entirely in that case.
+  if (!enabled || status === 'idle' || status === 'unavailable') return null;
 
   return (
     <div className="fixed top-4 left-4 z-50 select-none">
@@ -238,7 +243,7 @@ const CameraTile: React.FC<CameraTileProps> = ({
               <>
                 <ExclamationCircleFilled className="text-3xl text-rose-100 mb-2" />
                 <p className="text-[11px] font-bold text-white uppercase tracking-widest mb-1">
-                  Camera {status === 'denied' ? 'denied' : 'unavailable'}
+                  Camera {status === 'denied' ? 'denied' : 'error'}
                 </p>
                 <p className="text-[10px] text-rose-100 leading-snug">{error}</p>
               </>

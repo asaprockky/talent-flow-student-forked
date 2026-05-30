@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Empty, Input, Tag, message } from 'antd';
 import {
   BankOutlined,
+  BellFilled,
   CheckCircleFilled,
   EnvironmentOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { useApplyToVacancy, useVacancies } from '../hooks/useCandidatePortal';
+import { Link } from 'react-router-dom';
+import {
+  useApplyToVacancy,
+  useNotifications,
+  useVacancies,
+} from '../hooks/useCandidatePortal';
 import { ApiError } from '../lib/api';
-import type { VacancyItem } from '../types/portal';
+import type { NotificationItem, VacancyItem } from '../types/portal';
+import VacancyDetailsModal from '../components/applications/vacancyDetailsModal';
 
 const formatDate = (value: string | null) => {
   if (!value) return null;
@@ -17,11 +24,34 @@ const formatDate = (value: string | null) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+/**
+ * Open Roles page (U6).
+ *
+ * Two surfaces:
+ *   1. A pinned status-change feed at the top of the page — every
+ *      unread `status_change` notification (from the admin pipeline)
+ *      gets surfaced here so a candidate sees "Your application is now
+ *      in Interviewing" the next time they land on Open Roles. Reads
+ *      from the existing /notifications endpoint, no new wiring.
+ *   2. The vacancy grid, with a "View details" button that opens the
+ *      shared VacancyDetailsModal (full description, dates, the
+ *      assessment that will be assigned, and the FIFA-style pipeline
+ *      tracker once they've applied).
+ */
 const JobsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const { data, isLoading, isError } = useVacancies(search);
+  const notifications = useNotifications();
   const apply = useApplyToVacancy();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [detailVacancyId, setDetailVacancyId] = useState<string | null>(null);
+
+  const statusChanges = useMemo<NotificationItem[]>(() => {
+    const items = notifications.data?.items ?? [];
+    return items
+      .filter((item) => item.type === 'status_change' && !item.is_read)
+      .slice(0, 3);
+  }, [notifications.data?.items]);
 
   const handleApply = async (vacancy: VacancyItem) => {
     setPendingId(vacancy.id);
@@ -48,15 +78,48 @@ const JobsPage: React.FC = () => {
           <h2 className="text-4xl font-bold tracking-tighter text-gray-900 leading-none mb-3">Open Roles</h2>
           <p className="text-gray-500 font-medium">Browse open vacancies and apply in one click.</p>
         </div>
-        <Input
-          allowClear
-          prefix={<SearchOutlined className="text-gray-400" />}
-          placeholder="Search roles"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="h-11 sm:min-w-70 rounded-xl!"
-        />
+        <div className="flex items-center gap-3 flex-wrap">
+          <Link to="/applications">
+            <Button className="h-11 font-semibold rounded-xl!">My applications</Button>
+          </Link>
+          <Input
+            allowClear
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="Search roles"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="h-11 sm:min-w-70 rounded-xl!"
+          />
+        </div>
       </div>
+
+      {statusChanges.length > 0 && (
+        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <BellFilled className="text-blue-500" />
+            <h3 className="font-bold text-blue-900">Application updates</h3>
+          </div>
+          <ul className="space-y-2 text-sm text-blue-900">
+            {statusChanges.map((item, idx) => (
+              <li key={item.id ?? `${item.created_at}-${idx}`} className="flex items-start gap-2">
+                <span className="size-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold leading-snug">{item.title}</p>
+                  {item.message && (
+                    <p className="text-blue-900/80 leading-snug">{item.message}</p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/applications"
+            className="inline-block mt-3 text-xs font-bold text-blue-700 hover:underline"
+          >
+            View all my applications →
+          </Link>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid gap-5 md:grid-cols-2">
@@ -79,7 +142,7 @@ const JobsPage: React.FC = () => {
             return (
               <div
                 key={vacancy.id}
-                className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col gap-4"
+                className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col gap-4 transition-shadow hover:shadow-lg"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -105,26 +168,40 @@ const JobsPage: React.FC = () => {
                   ) : (
                     <span />
                   )}
-                  {vacancy.has_applied ? (
-                    <span className="text-sm font-semibold text-emerald-600 flex items-center gap-1.5">
-                      <CheckCircleFilled /> Applied
-                    </span>
-                  ) : (
+                  <div className="flex items-center gap-2">
                     <Button
-                      type="primary"
-                      onClick={() => handleApply(vacancy)}
-                      loading={pendingId === vacancy.id}
+                      onClick={() => setDetailVacancyId(vacancy.id)}
                       className="h-10 font-semibold"
                     >
-                      Apply
+                      View details
                     </Button>
-                  )}
+                    {vacancy.has_applied ? (
+                      <span className="text-sm font-semibold text-emerald-600 flex items-center gap-1.5">
+                        <CheckCircleFilled /> Applied
+                      </span>
+                    ) : (
+                      <Button
+                        type="primary"
+                        onClick={() => handleApply(vacancy)}
+                        loading={pendingId === vacancy.id}
+                        className="h-10 font-semibold"
+                      >
+                        Apply
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <VacancyDetailsModal
+        vacancyId={detailVacancyId}
+        open={Boolean(detailVacancyId)}
+        onClose={() => setDetailVacancyId(null)}
+      />
     </div>
   );
 };

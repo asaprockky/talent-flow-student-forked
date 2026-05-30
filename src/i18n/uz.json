@@ -21,6 +21,8 @@
   },
   "nav": {
     "dashboard": "Bosh sahifa",
+    "jobs": "Vakansiyalar",
+    "applications": "Mening arizalarim",
     "assessments": "Testlar",
     "practice": "Mashq",
     "aiInterview": "AI suhbat",
@@ -114,6 +116,8 @@
     "cameraReadyHint": "Test paytida kamera oynachasi yuqori chap burchakda koʻrinadi. Video yozilmaydi — bu faqat ishtirok belgisi.",
     "cameraDenied": "Kamera ruxsati rad etildi. Kamerani yoqing va qayta urinib koʻring — usiz test boshlanmaydi.",
     "cameraNoDevice": "Kamera topilmadi. Testni topshirish uchun ishlaydigan kamera kerak.",
+    "cameraOptional": "Kamera topilmadi",
+    "cameraOptionalHint": "Bu qurilmada kamera yo'q. Vizual kuzatuv o'tkazib yuboriladi, lekin faollik va anti-cheat hodisalari baribir yoziladi. Davom etishingiz mumkin.",
     "cameraUnavailable": "Ushbu brauzer kamera APIni qoʻllab-quvvatlamaydi. Chrome, Edge yoki Firefoxni sinab koʻring.",
     "cameraRetry": "Kamerani qayta tekshirish",
     "rightClickWarn": "Oʻng tugma yoziladi.",

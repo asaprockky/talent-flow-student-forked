@@ -4,6 +4,7 @@ import type {
   AchievementsResponse,
   AIProfileResponse,
   AnalyticsResponse,
+  ApplicationsResponse,
   ApplyResponse,
   AssessmentsResponse,
   AvatarUploadResponse,
@@ -27,6 +28,7 @@ import type {
   TestSessionProgress,
   TestSessionStart,
   VacanciesResponse,
+  VacancyDetail,
 } from '../types/portal';
 
 export const portalKeys = {
@@ -48,6 +50,8 @@ export const portalKeys = {
   achievements: ['candidatePortal', 'achievements'] as const,
   practiceCategories: ['candidatePortal', 'practice', 'categories'] as const,
   vacancies: (search: string) => ['candidatePortal', 'vacancies', search] as const,
+  vacancyDetail: (vacancyId: string) => ['candidatePortal', 'vacancyDetail', vacancyId] as const,
+  applications: ['candidatePortal', 'applications'] as const,
 };
 
 export const useCandidateMe = () => (
@@ -273,12 +277,34 @@ export const useApplyToVacancy = () => {
         method: 'POST',
       })
     ),
-    onSuccess: () => {
+    onSuccess: (_data, vacancyId) => {
       queryClient.invalidateQueries({ queryKey: ['candidatePortal', 'vacancies'] });
+      queryClient.invalidateQueries({ queryKey: portalKeys.vacancyDetail(vacancyId) });
+      queryClient.invalidateQueries({ queryKey: portalKeys.applications });
       queryClient.invalidateQueries({ queryKey: portalKeys.dashboard });
     },
   });
 };
+
+// Full vacancy detail (description, dates, linked test, my application
+// status if any). Powers the Open Roles details modal.
+export const useVacancyDetail = (vacancyId?: string) => (
+  useQuery({
+    queryKey: portalKeys.vacancyDetail(vacancyId ?? ''),
+    queryFn: () => apiFetch<VacancyDetail>(`/candidate/portal/vacancies/${vacancyId}`),
+    enabled: Boolean(vacancyId),
+  })
+);
+
+// FIFA-style status tracker: my application pipeline across every
+// vacancy I've applied to.
+export const useApplications = () => (
+  useQuery({
+    queryKey: portalKeys.applications,
+    queryFn: () => apiFetch<ApplicationsResponse>('/candidate/portal/applications'),
+    staleTime: 1000 * 60,
+  })
+);
 
 export const useReport = (sessionId?: string) => (
   useQuery({

@@ -592,9 +592,19 @@ const TestPage: React.FC = () => {
         onPresenceLost={(absentForMs) => reportEvent('face_not_detected', { absent_for_ms: absentForMs })}
       />
 
-      {(cameraStatus === 'denied' ||
-        cameraStatus === 'unavailable' ||
-        cameraStatus === 'error') && (
+      {/* In-test camera banner. `unavailable` (no device) is soft —
+          amber, non-blocking — because the integrity gate already
+          let the student through that branch. `denied` / `error`
+          stay red so the student knows proctoring is broken. */}
+      {cameraStatus === 'unavailable' && (
+        <div className="fixed top-4 left-56 right-4 z-50">
+          <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 text-amber-900 p-3 flex items-start gap-2 text-xs font-bold shadow-lg">
+            <WarningFilled className="mt-0.5 text-base text-amber-500" />
+            <span>{t('test.cameraOptionalHint')}</span>
+          </div>
+        </div>
+      )}
+      {(cameraStatus === 'denied' || cameraStatus === 'error') && (
         <div className="fixed top-4 left-56 right-4 z-50">
           <div className="rounded-2xl border-2 border-rose-500 bg-rose-50 text-rose-900 p-3 flex items-start gap-2 text-xs font-bold shadow-lg">
             <WarningFilled className="mt-0.5 text-base text-rose-600" />
